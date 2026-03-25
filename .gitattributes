@@ -1,0 +1,5 @@
+*.md text eol=lf
+*.rb text eol=lf
+*.rb.example text eol=lf
+*.txt text eol=lf
+Gemfile text eol=lf

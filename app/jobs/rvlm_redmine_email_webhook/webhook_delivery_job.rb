@@ -5,6 +5,12 @@ module RvlmRedmineEmailWebhook
 
   class WebhookDeliveryJob < ApplicationJob
 
+    # This is a temporary workaround to prevent leaking potentially sensitive
+    # information in logs. Webhooks URLs are highly likely to contain access
+    # tokens of some kind.
+    # TODO: find a better solution.
+    self.log_arguments = false
+
     queue_as :default
     retry_on StandardError, wait: :polynomially_longer, attempts: 5
 
@@ -20,14 +26,15 @@ module RvlmRedmineEmailWebhook
       http_request = build_http_request(request)
       http_response = http.request(http_request)
 
+      log_marker = request.log_marker || "(no log marker)"
+
       unless http_response.is_a?(Net::HTTPSuccess)
         # Trigger a retry by raising an exception. The retry mechanism will handle the backoff and retry attempts.
         # TODO: find a more specific exception class to raise here.
-        # TODO: URI may contain access tokens; filter them from logs somehow?
-        raise "Webhook delivery failed: #{request.uri}: HTTP #{http_response.code} #{http_response.message}"
+        raise "Webhook delivery failed: #{log_marker}: HTTP #{http_response.code} #{http_response.message}"
       end
 
-      LogUtils.info("Webhook delivered successfully: #{request.uri}: HTTP #{http_response.code}")
+      LogUtils.info("Webhook delivered successfully: #{log_marker}: HTTP #{http_response.code}")
     end
 
     private

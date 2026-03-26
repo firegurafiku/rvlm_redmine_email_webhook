@@ -50,5 +50,6 @@ register_hook(:telegram) do |user, message|
     uri:     TELEGRAM_BOT_URI,
     headers: { 'Content-Type' => 'application/json' },
     body:    payload.to_json,
+    log_marker: "TELEGRAM_API_REQUEST: user.login=#{user.login}",
   )
 end

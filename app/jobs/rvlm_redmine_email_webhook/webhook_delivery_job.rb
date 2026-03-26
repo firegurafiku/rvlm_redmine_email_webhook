@@ -1,4 +1,5 @@
 require 'net/http'
+require 'socksify/http'
 require 'uri'
 
 module RvlmRedmineEmailWebhook
@@ -17,14 +18,12 @@ module RvlmRedmineEmailWebhook
     def perform(request_hash)
       request = WebRequest.from_h(request_hash)
 
-      http = Net::HTTP.new(request.uri.host, request.uri.port)
-      http.use_ssl = (request.uri.scheme == 'https')
-      http.read_timeout = request.read_timeout
-      http.open_timeout = request.open_timeout
-      http.write_timeout = request.write_timeout
-
+      # Create the request before starting a connection.
       http_request = build_http_request(request)
-      http_response = http.request(http_request)
+
+      http_response = start_connection(request) do |http|
+        http.request(http_request)
+      end
 
       log_marker = request.log_marker || "(no log marker)"
 
@@ -38,6 +37,44 @@ module RvlmRedmineEmailWebhook
     end
 
     private
+
+    def start_connection(request, &block)
+      raise ArgumentError, "Block is required" unless block_given?
+
+      proxy = request.proxy
+
+      if proxy.nil?
+        klass = Net::HTTP
+      elsif proxy.is_a?(Sock5Proxy)
+        klass = Net::HTTP.socks_proxy(
+          proxy.host,
+          proxy.port,
+          username: proxy.username,
+          password: proxy.password,
+        )
+
+        # TODO: excessive logging?
+        LogUtils.info "Using SOCKS5 proxy for webhook delivery: #{proxy.host}:#{proxy.port} (#{proxy.username ? 'with' : 'without'} authentication)"
+      else
+        # TODO: do not retry on this exception.
+        raise "Unsupported proxy type: #{proxy.class}"
+      end
+
+      begin
+        # Note that the socksify/http, if used, will also resolve the hostname
+        # through the proxy. This is usually the desired behavior.
+        http = klass.new(request.uri.host, request.uri.port)
+        http.use_ssl = (request.uri.scheme == 'https')
+        http.read_timeout = request.read_timeout
+        http.open_timeout = request.open_timeout
+        http.write_timeout = request.write_timeout
+
+        # Implicit return value.
+        block.call(http)
+      ensure
+        http.finish if http.started?
+      end
+    end
 
     def build_http_request(request)
 

@@ -34,9 +34,11 @@ module RvlmRedmineEmailWebhook
       # with those methods, they're in their right to do so.
       request_body_permitted = !request.body.nil?
 
+      # Do not convert 'request.method' to uppercase here; if the user wants
+      # to use a non-standard HTTP method, they should know better.
       # TODO: named arguments here?
       http_request = Net::HTTPGenericRequest.new(
-        request.method.to_s.upcase,
+        request.method,
         request_body_permitted,
         request.response_body_permitted,
         request.uri.request_uri

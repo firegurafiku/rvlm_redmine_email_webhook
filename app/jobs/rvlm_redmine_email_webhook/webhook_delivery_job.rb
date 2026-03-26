@@ -13,6 +13,9 @@ module RvlmRedmineEmailWebhook
 
       http = Net::HTTP.new(request.uri.host, request.uri.port)
       http.use_ssl = (request.uri.scheme == 'https')
+      http.read_timeout = request.read_timeout
+      http.open_timeout = request.open_timeout
+      http.write_timeout = request.write_timeout
 
       http_request = build_http_request(request)
       http_response = http.request(http_request)

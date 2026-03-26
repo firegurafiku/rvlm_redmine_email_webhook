@@ -51,5 +51,14 @@ register_hook(:telegram) do |user, message|
     headers: { 'Content-Type' => 'application/json' },
     body:    payload.to_json,
     log_marker: "TELEGRAM_API_REQUEST: user.login=#{user.login}",
+
+    # Optional proxy settings. Username and password can be omitted or set to
+    # nil if the proxy doesn't require authentication.
+    proxy: RvlmRedmineEmailWebhook::Sock5Proxy.new(
+      host: '<PROXY_HOST>',
+      port: 1080,
+      username: '<PROXY_USERNAME>',
+      password: '<PROXY_PASSWORD>',
+    ),
   )
 end

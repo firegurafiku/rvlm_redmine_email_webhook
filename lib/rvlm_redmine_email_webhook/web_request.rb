@@ -18,6 +18,8 @@ module RvlmRedmineEmailWebhook
         raise ArgumentError, "Parameter 'uri' is required"
       end
 
+      # TODO: validate the rest of the parameters too.
+
       @method  = method
       @uri     = uri
       @headers = headers

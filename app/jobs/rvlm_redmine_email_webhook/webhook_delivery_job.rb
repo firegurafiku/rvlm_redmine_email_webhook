@@ -20,6 +20,7 @@ module RvlmRedmineEmailWebhook
       unless http_response.is_a?(Net::HTTPSuccess)
         # Trigger a retry by raising an exception. The retry mechanism will handle the backoff and retry attempts.
         # TODO: find a more specific exception class to raise here.
+        # TODO: URI may contain access tokens; filter them from logs somehow?
         raise "Webhook delivery failed: #{request.uri}: HTTP #{http_response.code} #{http_response.message}"
       end
 

@@ -8,6 +8,7 @@ module RvlmRedmineEmailWebhook
 
     attr_accessor :method, :uri, :headers, :body, :response_body_permitted
     attr_accessor :read_timeout, :open_timeout, :write_timeout
+    attr_accessor :log_marker
 
     # @param method   [String]  HTTP method (verb) as a string. Default is "POST".
     # @param uri      [URI]     The full URI to request.
@@ -17,11 +18,14 @@ module RvlmRedmineEmailWebhook
     # @param read_timeout [Float] Read timeout in seconds. Default is 5.
     # @param open_timeout [Float] Open timeout in seconds. Default is 5.
     # @param write_timeout [Float] Write timeout in seconds. Default is 5.
+    # @param log_marker [String, nil] A marker for logging purposes. Default is nil.
+
     def initialize(method: "POST", uri: nil, headers: {}, body: nil,
         response_body_permitted: true,
         read_timeout: 5,
         open_timeout: 5,
-        write_timeout: 5)
+        write_timeout: 5,
+        log_marker: nil)
 
       if uri.nil?
         raise ArgumentError, "Parameter 'uri' is required"
@@ -37,6 +41,7 @@ module RvlmRedmineEmailWebhook
       @read_timeout = read_timeout
       @open_timeout = open_timeout
       @write_timeout = write_timeout
+      @log_marker = log_marker
     end
 
     # Serialize to a plain Hash so it can be passed safely to ActiveJob.
@@ -49,7 +54,8 @@ module RvlmRedmineEmailWebhook
         'response_body_permitted' => response_body_permitted,
         'read_timeout' => read_timeout,
         'open_timeout' => open_timeout,
-        'write_timeout' => write_timeout
+        'write_timeout' => write_timeout,
+        'log_marker' => log_marker,
       }
     end
 
@@ -62,7 +68,8 @@ module RvlmRedmineEmailWebhook
         response_body_permitted: hash['response_body_permitted'],
         read_timeout: hash['read_timeout'],
         open_timeout: hash['open_timeout'],
-        write_timeout: hash['write_timeout']
+        write_timeout: hash['write_timeout'],
+        log_marker: hash['log_marker'],
       )
     end
   end

@@ -1,0 +1,54 @@
+require 'cgi'
+require 'uri'
+
+TELEGRAM_BOT_TOKEN = '<BOT_TOKEN_HERE>'
+TELEGRAM_BOT_URI = URI.parse("https://api.telegram.org/bot#{TELEGRAM_BOT_TOKEN}/sendMessage").freeze
+
+# TODO: check exact message length limits.
+TELEGRAM_MAX_MESSAGE_LENGTH = 4000
+
+register_hook(:telegram) do |user, message|
+
+  cf = user.custom_field_values.detect do |cfv|
+    cfv.custom_field.name == 'Telegram Chat ID'
+  end
+
+  chat_id = cf&.value
+  next nil if chat_id.nil? || chat_id.strip.empty?
+
+  # Build a simple text representation of the email.
+  subject = message.subject || '(no subject)'
+
+  body = if message.multipart?
+    message.text_part&.decoded
+  else
+    message.decoded
+  end
+
+  body ||= '(no body)'
+
+  # Truncate the string in place in a way that hopefully avoids unnecessary reallocations.
+  if (body.length > TELEGRAM_MAX_MESSAGE_LENGTH)
+    body[TELEGRAM_MAX_MESSAGE_LENGTH..-1] = ''
+  end
+
+  # Escape HTML special characters everywhere.
+  safeSubject = CGI.escapeHTML(subject)
+  safeBody = CGI.escapeHTML(body)
+
+  text = "<pre>Subject: #{safeSubject}\n\n#{safeBody}</pre>"
+
+  payload = {
+    chat_id:      chat_id,
+    text:         text,
+    parse_mode:   'HTML'
+  }
+
+  # Return a WebRequest object describing the request to be made by the delivery job.
+  RvlmRedmineEmailWebhook::WebRequest.new(
+    method:  "POST",
+    uri:     TELEGRAM_BOT_URI,
+    headers: { 'Content-Type' => 'application/json' },
+    body:    payload.to_json,
+  )
+end

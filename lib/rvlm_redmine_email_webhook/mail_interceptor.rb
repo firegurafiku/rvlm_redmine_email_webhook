@@ -36,6 +36,11 @@ module RvlmRedmineEmailWebhook
     private
 
     def self.get_unique_users(message)
+
+      # The following code's branches look really verbose and unidiomatic in
+      # Ruby, but hopefully they're more efficient than Array(message.to).each,
+      # because it avoids creating intermediate arrays.
+
       unique_emails = Set.new
 
       if message.to.is_a?(String)
